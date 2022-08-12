@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/louis296/p2p-server/config"
+	"github.com/louis296/p2p-server/pkg/room"
 	"github.com/louis296/p2p-server/pkg/server"
 	"os"
 )
@@ -13,7 +14,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	wsServer := server.NewP2PServer(WebSocketHandler)
+	roomManager := room.NewManager()
+	wsServer := server.NewP2PServer(roomManager.HandleNewWebSocket)
 
 	defaultConfig := server.DefaultConfig()
 
