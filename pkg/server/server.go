@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/louis296/p2p-server/pkg/log"
 	"net/http"
 	"strconv"
 )
@@ -45,7 +46,7 @@ func (server *P2PServer) handleWebSocketRequest(writer http.ResponseWriter, requ
 	responseHeader := http.Header{}
 	socket, err := server.upgrader.Upgrade(writer, request, responseHeader)
 	if err != nil {
-		//log
+		log.Panic("%v", err)
 	}
 	wsTransport := NewWebSocketConn(socket)
 	server.handleWebSocket(wsTransport, request)
@@ -55,7 +56,7 @@ func (server *P2PServer) handleWebSocketRequest(writer http.ResponseWriter, requ
 func (server *P2PServer) Bind(conf P2PServerConfig) {
 	http.HandleFunc(conf.WebSocketPath, server.handleWebSocketRequest)
 	http.Handle("/", http.FileServer(http.Dir(conf.HTMLRoot)))
-	//log
+	log.Info("P2P Server listening on: %s:%d", conf.Host, conf.Port)
 
 	//start as http
 	err := http.ListenAndServe(conf.Host+":"+strconv.Itoa(conf.Port), nil)

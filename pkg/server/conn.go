@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/chuckpreslar/emission"
 	"github.com/gorilla/websocket"
+	"github.com/louis296/p2p-server/pkg/log"
 	"github.com/louis296/p2p-server/pkg/util"
 	"net"
 	"sync"
@@ -26,7 +27,7 @@ func NewWebSocketConn(socket *websocket.Conn) *WebSocketConn {
 	conn.mutex = new(sync.Mutex)
 	conn.closed = false
 	conn.socket.SetCloseHandler(func(code int, text string) error {
-		//log
+		log.Warn("%s [%d]", text, code)
 		conn.Emit("close", code, text)
 		conn.closed = true
 		return nil
@@ -44,7 +45,7 @@ func (conn *WebSocketConn) ReadMessage() {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				//log
+				log.Warn("Get error: %v", err)
 				if c, ok := err.(*websocket.CloseError); ok {
 					conn.Emit("close", c.Code, c.Text)
 				} else {
@@ -62,18 +63,18 @@ func (conn *WebSocketConn) ReadMessage() {
 	for {
 		select {
 		case _ = <-pingTicker.C:
-			//log
+			log.Info("Send heart package...")
 			heartPackage := map[string]interface{}{
 				"type": "heartPackage",
 				"data": "",
 			}
 			if err := conn.Send(util.Marshal(heartPackage)); err != nil {
-				//log
+				log.Error("Send heart package error")
 				pingTicker.Stop()
 				return
 			}
 		case message := <-in:
-			//log
+			log.Info("Receive data: %s", message)
 			conn.Emit("message", message)
 		case <-stop:
 			return
@@ -82,7 +83,7 @@ func (conn *WebSocketConn) ReadMessage() {
 }
 
 func (conn *WebSocketConn) Send(message string) error {
-	//log
+	log.Info("Send data: %s", message)
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 	if conn.closed {
@@ -95,10 +96,10 @@ func (conn *WebSocketConn) Close() {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 	if !conn.closed {
-		//log
+		log.Info("Close websocket connection: %v", conn)
 		conn.socket.Close()
 		conn.closed = true
 	} else {
-		//log
+		log.Info("Connection already closed: %v", conn)
 	}
 }
